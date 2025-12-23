@@ -144,23 +144,47 @@ E_USER_ERROR);
         //create name value pairs seperated by &
         foreach($_param as $k => $v) 
         { 
-          $postData .= $k . '='.$v.'&'; 
+          $postData .= $k . '='.urlencode($v).'&'; // Encoder les valeurs pour éviter les problèmes avec les caractères spéciaux
         }
-        rtrim($postData, '&');
+        $postData = rtrim($postData, '&'); // Corriger : assigner le résultat de rtrim()
 
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL,$_url);
+        curl_setopt($ch, CURLOPT_URL, $_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_HEADER, FALSE); 
-        curl_setopt($ch, CURLOPT_POST, count($postData));
-        //curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POST, 1); // Utiliser 1 au lieu de count() car $postData est une string
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_USERAGENT, TRUE);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        
+        // Pour le développement local avec HTTPS auto-signé
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+        }
 
-        $output=curl_exec($ch);
-
+        $output = curl_exec($ch);
+        
+        // Vérifier les erreurs cURL
+        if ($output === FALSE) {
+            $error = curl_error($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
+            // Log l'erreur pour le débogage
+            log_message('error', 'cURL Error: ' . $error . ' (Code: ' . $errno . ') - URL: ' . $_url);
+            return FALSE;
+        }
+        
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        // Vérifier le code HTTP
+        if ($httpCode >= 400) {
+            log_message('error', 'HTTP Error: ' . $httpCode . ' - URL: ' . $_url);
+            return FALSE;
+        }
 
         
         return $output;
