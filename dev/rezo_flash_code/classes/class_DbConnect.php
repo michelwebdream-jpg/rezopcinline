@@ -96,10 +96,61 @@ class DbConnect
 	*/
 	function __construct()
 	{
-		$this->DB_HOST     = 'webdreamblog.mysql.db';
-		$this->DB_USERNAME = 'webdreamblog'; // !!! CHANGE ME
-		$this->DB_PASSWORD = 'qD8OvOP2'; // !!! CHANGE ME
-		$this->DB_DATABASE = 'webdreamblog'; // !!! CHANGE ME
+		// Détecter l'environnement (local vs production)
+		if (!function_exists('is_local_environment')) {
+			function is_local_environment() {
+				// Check if ENVIRONMENT is set to development
+				if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+					return true;
+				}
+				
+				// Check hostname
+				$hostname = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+				$server_name = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '';
+				
+				// Common local development indicators
+				$local_indicators = array(
+					'localhost',
+					'127.0.0.1',
+					'::1',
+					'local',
+					'dev',
+					'.local',
+					'.dev'
+				);
+				
+				// Check if hostname or server name contains local indicators
+				foreach ($local_indicators as $indicator) {
+					if (stripos($hostname, $indicator) !== false || 
+						stripos($server_name, $indicator) !== false) {
+						return true;
+					}
+				}
+				
+				// Check if it's an IP address (likely local)
+				if (filter_var($hostname, FILTER_VALIDATE_IP) !== false) {
+					return true;
+				}
+				
+				return false;
+			}
+		}
+		
+		$is_local = is_local_environment();
+		
+		if ($is_local) {
+			// Configuration locale (MAMP)
+			$this->DB_HOST     = '127.0.0.1'; // Utiliser 127.0.0.1 au lieu de localhost pour forcer TCP/IP
+			$this->DB_USERNAME = 'root';
+			$this->DB_PASSWORD = 'root';
+			$this->DB_DATABASE = 'webdreamblog';
+		} else {
+			// Configuration production
+			$this->DB_HOST     = 'webdreamblog.mysql.db';
+			$this->DB_USERNAME = 'webdreamblog';
+			$this->DB_PASSWORD = 'qD8OvOP2';
+			$this->DB_DATABASE = 'webdreamblog';
+		}
 	}
 	
 	/**

@@ -323,27 +323,34 @@ function actualise_liste_des_victimes(){
             {
                 //alert(trame[i]);
                 var temp=trame[i].split(">rezopcinline_wd<");
-                id[i]=temp[0];
-                nom[i]=temp[1];
-                prenom[i]=temp[2];
-                identification[i]= temp[3];
-                date_naissance[i]= temp[4].substr(0, 10);
+                
+                // Vérifier que le tableau a assez d'éléments avant d'y accéder
+                if (temp.length < 15) {
+                    console.error('Format de données invalide pour la ligne ' + i + ': ' + trame[i]);
+                    continue; // Ignorer cette ligne et passer à la suivante
+                }
+                
+                id[i]=temp[0] || '';
+                nom[i]=temp[1] || '';
+                prenom[i]=temp[2] || '';
+                identification[i]= temp[3] || '';
+                date_naissance[i]= (temp[4] && typeof temp[4] === 'string') ? temp[4].substr(0, 10) : '';
                 
                 
-                age[i]= temp[5];
+                age[i]= temp[5] || '';
                 if (temp[6]=='0'){
                     sexe[i]= 'Femme';
                 }else{
                     sexe[i]= 'Homme';
                 }
                 
-                nationalite[i]= temp[7];
-                adresse[i]= temp[8];
-                commentaire[i]= temp[9];
-                json_horaires[i]= temp[10];
-                type_intervention[i]= temp[12];
-                centre_accueil[i]= temp[13];
-                date_creation[i]=temp[14];
+                nationalite[i]= temp[7] || '';
+                adresse[i]= temp[8] || '';
+                commentaire[i]= temp[9] || '';
+                json_horaires[i]= temp[10] || '';
+                type_intervention[i]= temp[12] || '';
+                centre_accueil[i]= temp[13] || '';
+                date_creation[i]=temp[14] || '';
                 if (json_horaires[i]!=''){
                     
                     var horaires_object = JSON.parse(json_horaires[i]);

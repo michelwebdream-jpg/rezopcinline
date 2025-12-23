@@ -214,7 +214,7 @@ function InitOverviewDataTable_activite(){
             "targets": 9,
             "data": null,
               "orderable": false,
-            "defaultContent": "<button id='button_geolocaliser' class='bouton_contour_rouge'>Géolocaliser</button>"
+            "defaultContent": "<button class='button_geolocaliser bouton_contour_rouge'>Géolocaliser</button>"
         },
           {
             "targets": 10,
@@ -256,11 +256,23 @@ function InitOverviewDataTable_activite(){
         var data = table_activite.row( $(this).parents('tr') ).data();
         ouvre_page_modifier_activiter(data);   
     } );
-    $('#tableau_activite_id tbody').on( 'click', '#button_geolocaliser', function (e) {
-        //e.stopPropagation();
+    $('#tableau_activite_id tbody').on( 'click', '.button_geolocaliser', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        console.log('Bouton géolocaliser cliqué (activité)');
         var data = table_activite.row( $(this).parents('tr') ).data();
-        lance_activite(data);
-        
+        console.log('Données de l\'activité:', data);
+        if (data && typeof lance_activite === 'function') {
+            lance_activite(data);
+        } else {
+            console.error('Erreur: lance_activite n\'est pas une fonction ou data est invalide');
+            if (!data) {
+                console.error('data est null ou undefined');
+            }
+            if (typeof lance_activite !== 'function') {
+                console.error('lance_activite n\'est pas définie');
+            }
+        }
     } );
     $('#tableau_activite_id tbody').on( 'click', '#button_historique', function (e) {
         e.stopPropagation();

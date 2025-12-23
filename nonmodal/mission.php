@@ -232,7 +232,7 @@ function InitOverviewDataTable_mission(){
             "targets": 8,
             "data": null,
               "orderable": false,
-            "defaultContent": "<button id='button_geolocaliser' class='bouton_contour_rouge'>Géolocaliser</button>"
+            "defaultContent": "<button class='button_geolocaliser bouton_contour_rouge'>Géolocaliser</button>"
         },{
             "targets": 9,
             "data": null,
@@ -286,11 +286,23 @@ function InitOverviewDataTable_mission(){
         var data = table_mission.row( $(this).parents('tr') ).data();
         ouvre_page_modifier_mission(data);   
     } );
-    $('#tableau_mission_id tbody').on( 'click', '#button_geolocaliser', function (e) {
+    $('#tableau_mission_id tbody').on( 'click', '.button_geolocaliser', function (e) {
         e.stopPropagation();
+        e.preventDefault();
+        console.log('Bouton géolocaliser cliqué');
         var data = table_mission.row( $(this).parents('tr') ).data();
-        lance_mission(data);
-        
+        console.log('Données de la mission:', data);
+        if (data && typeof lance_mission === 'function') {
+            lance_mission(data);
+        } else {
+            console.error('Erreur: lance_mission n\'est pas une fonction ou data est invalide');
+            if (!data) {
+                console.error('data est null ou undefined');
+            }
+            if (typeof lance_mission !== 'function') {
+                console.error('lance_mission n\'est pas définie');
+            }
+        }
     } );
     $('#tableau_mission_id tbody').on( 'click', '#button_activer', function (e) {
         e.stopPropagation();
