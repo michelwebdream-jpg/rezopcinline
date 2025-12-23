@@ -1,5 +1,12 @@
 <?PHP
 
+// Désactiver l'affichage des erreurs AVANT toute autre chose
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Démarrer le buffer de sortie pour capturer toute sortie non désirée
+ob_start();
 
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT, -1');
 header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -64,10 +71,15 @@ $myArrayReponse = json_decode($resp, true);
 return $myArrayReponse['expires'];
 }
 // AUTOLOAD CLASS OBJECTS... YOU CAN USE INCLUDES IF YOU PREFER
-if(!function_exists("__autoload")){ 
-	function __autoload($class_name){
-		require_once('classes/class_'.$class_name.'.php');
+// Utiliser spl_autoload_register au lieu de __autoload (déprécié)
+if(!function_exists("autoload_dbconnect")){ 
+	function autoload_dbconnect($class_name){
+		$file = 'classes/class_'.$class_name.'.php';
+		if (file_exists($file)) {
+			require_once($file);
+		}
 	}
+	spl_autoload_register('autoload_dbconnect');
 }
 
 // CREATE DATABASE OBJECT ( MAKE SURE TO CHANGE LOGIN INFO IN CLASS FILE )
@@ -94,19 +106,53 @@ $resp=test_licence($license,$mail);
 	if ($resp=="1"){
 		$expiration_license=get_date_licence($license,$mail);
 		
-		$sql = "UPDATE `REZO_FLASH` SET `date_fin_validite_licence`='".$expiration_license."' WHERE `moncode`='{$mon_code}';";
-		$db->query($sql);
+		// Nettoyer la valeur reçue (supprimer les espaces, convertir en minuscules pour la comparaison)
+		$expiration_license_clean = trim(strtolower($expiration_license));
+		
+		// Si la licence est à vie ('lifetime'), convertir en date très lointaine
+		if ($expiration_license_clean == 'lifetime' || empty($expiration_license_clean) || $expiration_license_clean == 'null' || $expiration_license_clean == 'none') {
+			$expiration_license = '9999-12-31 23:59:59';
+		} else {
+			// S'assurer que la date est au format MySQL (YYYY-MM-DD HH:MM:SS)
+			// Si c'est déjà au bon format, l'utiliser tel quel
+			// Sinon, essayer de la convertir
+			$date_obj = date_create($expiration_license);
+			if ($date_obj !== false) {
+				$expiration_license = date_format($date_obj, 'Y-m-d H:i:s');
+			} else {
+				// Si la conversion échoue, utiliser une date par défaut
+				$expiration_license = '9999-12-31 23:59:59';
+			}
+		}
+		
+		// Échapper la valeur pour éviter les injections SQL
+		$db_connection = $db->Connection(); // Obtenir l'instance mysqli
+		$expiration_license_escaped = $db_connection->real_escape_string($expiration_license);
+		$mon_code_escaped = $db_connection->real_escape_string($mon_code);
+		
+		$sql = "UPDATE `REZO_FLASH` SET `date_fin_validite_licence`='".$expiration_license_escaped."' WHERE `moncode`='{$mon_code_escaped}';";
+		$result = $db->query($sql);
+		
+		if (!$result) {
+			$error = $db_connection->error;
+			// Log l'erreur mais continue quand même
+			error_log("Erreur SQL dans test_licence_administrateur: " . $error);
+		}
 		
 		$date=date_create($expiration_license);
 		$date_fin_validite_licence=date_format($date, 'd/m/Y H:i:s');
+		
+		ob_clean(); // Nettoyer le buffer avant d'afficher
 		echo "return_txt=ok$mon_code$date_fin_validite_licence";
 		
 		//echo "return_txt=1";
 	
 	}else if ($resp=="-1"){
+		ob_clean();
 		echo "return_txt=-2"; 	
 	}else
 	{
+		ob_clean();
 		echo "return_txt=-1"; 	
 	}
 	

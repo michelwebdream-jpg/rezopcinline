@@ -23,7 +23,29 @@ var Global = {
 		etat_administrateur:1,
 		administrateur_sur_carte:false,
 
-		 APP_SERVER_URL:"https://www.web-dream.fr", 
+		 APP_SERVER_URL:(function() {
+				var hostname = window.location.hostname;
+				var protocol = window.location.protocol;
+
+				var localIndicators = ['localhost', '127.0.0.1', '::1', 'local', '.local', '.dev'];
+				var isLocal = false;
+				for (var i = 0; i < localIndicators.length; i++) {
+					if (hostname.indexOf(localIndicators[i]) !== -1) {
+						isLocal = true;
+						break;
+					}
+				}
+				if (!isLocal && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+					isLocal = true;
+				}
+
+				if (isLocal) {
+					// Use the same protocol as the current page to avoid mixed content issues
+					return protocol + '//' + hostname + '/rezopcinline';
+				} else {
+					return 'https://www.web-dream.fr';
+				}
+			})(), 
 		 REGISTER_URI:"/dev/rezo_flash_code/creat_customer.php", 
 		 UPDATEUSER_URI:"/dev/rezo_flash_code/updateuser_customer.php",
 		 UPDATE_URI:"/dev/rezo_flash_code/update_customer.php", 
@@ -2106,6 +2128,12 @@ function efface_historique_mission(Id_pass){
 
 }
 function lance_activite(data_pass){
+	console.log('lance_activite appelée avec:', data_pass);
+	
+	if (!data_pass) {
+		console.error('Erreur: data_pass est null ou undefined');
+		return;
+	}
 	
 	usergroupList=new Array();
 	var temp1=data_pass.c7;
@@ -2115,9 +2143,16 @@ function lance_activite(data_pass){
 	$('#bouton_fermer_page_historique').click();
 	page_historique_type_encours="";
 	//Global.first_stage.carte.menu_marker.visible=false;
+	console.log('Appel de start_activite avec:', data_pass.c6, data_pass.activite, temp_liste_code, data_pass.liens_kml, data_pass.marqueurs_fixes);
 	start_activite(data_pass.c6,data_pass.activite,temp_liste_code,data_pass.liens_kml,data_pass.marqueurs_fixes);
 }
 function lance_mission(data_pass){
+	console.log('lance_mission appelée avec:', data_pass);
+	
+	if (!data_pass) {
+		console.error('Erreur: data_pass est null ou undefined');
+		return;
+	}
 	
 	usergroupList=new Array();
 	
@@ -2141,19 +2176,23 @@ function lance_mission(data_pass){
 	start_mission(data_pass.c6,data_pass.mission,temp_liste_code);
 }    
 function start_activite(Id_activite,nom_de_activite,code_a_traiter,liens_kml,marqueurs_fixes){
+	console.log('start_activite appelée avec:', Id_activite, nom_de_activite, code_a_traiter, liens_kml, marqueurs_fixes);
 	
 		stop_activite();
 		stop_mission();
 		Id_activite_en_cours=Id_activite;
+		console.log('Appel de test_licence_administrateur pour activite');
 		test_licence_administrateur("activite",nom_de_activite,code_a_traiter,liens_kml,marqueurs_fixes);
 	
 }
 function start_mission(Id_mission,nom_de_mission,code_a_traiter){
+	console.log('start_mission appelée avec:', Id_mission, nom_de_mission, code_a_traiter);
 	//if (!activite_is_running && !mission_is_running){
 		stop_activite();
 		stop_mission();
 		
 		Id_mission_en_cours=Id_mission;
+		console.log('Appel de test_licence_administrateur pour mission');
 		test_licence_administrateur("mission",nom_de_mission,code_a_traiter,'','');
 	//}
 }
@@ -2376,16 +2415,22 @@ function ajoute_dans_historique_mission(Id_mission,texte_a_ajouter){
           ;
 }
 function test_licence_administrateur(activite_mission,nom_de_activite_mission,code_a_traiter,liens_kml,marqueurs_fixes){
+    console.log('test_licence_administrateur appelée avec:', activite_mission, nom_de_activite_mission, code_a_traiter);
+    console.log('Global.code_administrateur:', Global.code_administrateur);
+    console.log('URL:', Global.APP_SERVER_URL+Global.TEST_LICENCE_ADMINISTRATEUR_URI);
     
     var $data={
             mon_code:Global.code_administrateur
         }
     
+    console.log('Données envoyées:', $data);
     var jqxhr = $.post(Global.APP_SERVER_URL+Global.TEST_LICENCE_ADMINISTRATEUR_URI,$data)
 
     .done(function(data, textStatus, jqXHR ) {
+        console.log('Réponse de test_licence_administrateur:', data);
 
         var buf=data.replace('return_txt=','');
+        console.log('buf après nettoyage:', buf);
 
         if (buf.indexOf("ok")==0)
 			{
@@ -2394,12 +2439,15 @@ function test_licence_administrateur(activite_mission,nom_de_activite_mission,co
 			
 				Global.code_administrateur=buf.slice(0,8);
 				Global.date_fin_validite_licence=buf.slice(8,buf.length);
+				console.log('Licence OK, lancement de', activite_mission);
 
 				
 				
 				if (activite_mission==="activite"){
+					console.log('Appel de start_activite2');
 					start_activite2(nom_de_activite_mission,code_a_traiter,liens_kml,marqueurs_fixes);
 				}else if (activite_mission==="mission"){
+					console.log('Appel de start_mission2');
 					start_mission2(nom_de_activite_mission,code_a_traiter);
 				}
 				
@@ -2416,6 +2464,9 @@ function test_licence_administrateur(activite_mission,nom_de_activite_mission,co
 			}
       })
   .fail(function(jqXHR, textStatus, errorThrown) {
+      console.error('Erreur dans test_licence_administrateur:', textStatus, errorThrown);
+      console.error('Response:', jqXHR.responseText);
+      console.error('Status:', jqXHR.status);
       ouvre_alerte('Erreur réseau !<br />Problème technique...'); 
       
   })
