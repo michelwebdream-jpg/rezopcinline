@@ -290,10 +290,10 @@ $(document).ready( function() {
         
         ferme_page_reglages();
         
-        if (Cookies.get('showDialog_nouveau_marker_fixe') == undefined || Cookies.get('showDialog_nouveau_marker_fixe') == null || Cookies.get('showDialog_nouveau_marker_fixe') != 'false') {
+        /*if (Cookies.get('showDialog_nouveau_marker_fixe') == undefined || Cookies.get('showDialog_nouveau_marker_fixe') == null || Cookies.get('showDialog_nouveau_marker_fixe') != 'false') {
             swal('Attention.','Depuis la version 4.2 de l\'application, le principe de positionnement des marqueurs fixes a changé. Veuillez lire les instructions pour prendre connaissance de la nouvelle procédure. Il est aussi possible maintenant de renomer un marqueur fixe en cliquant dessus.','warning');
             Cookies.set('showDialog_nouveau_marker_fixe', 'false', { expires: 365 });
-        }
+        }*/
         
         
         if ( $("#content_non_modal").is(':visible') ){
