@@ -2158,21 +2158,36 @@ function lance_mission(data_pass){
 	
 	//var info_cache=membres[i]+"<-+->"+titre[i]+"<-+->"+adresse_mission[i]+"<-+->"+lien_googlemap_mission[i]+"<-+->"+message_mission[i]+"<-+->"+etat_mission[i]+"<-+->"+date_lancement[i]+"<-+->"+date_cloture[i]+"<-+->"+membres_lu_mission;
 				
-	var temp0=data_pass.c7;				
+	var temp0=data_pass.c7;
+	console.log('lance_mission - temp0 (c7):', temp0);
+	
+	if (!temp0) {
+		console.error('Erreur: data_pass.c7 est null ou undefined');
+		return;
+	}
 	
 	var temp1=temp0.split("<-+->");
+	console.log('lance_mission - temp1 après split(<-+->):', temp1);
+	
+	if (!temp1 || temp1.length === 0 || !temp1[0]) {
+		console.error('Erreur: temp1[0] est null ou undefined');
+		return;
+	}
 	
 	var temp2=temp1[0].split(",");
+	console.log('lance_mission - temp2 après split(,):', temp2);
 	
 	//var temp1:String=data_table_list_des_missions.getItemAt(Index).c7;
 	//var temp2:Array=temp1.split(",");
 	var temp_liste_code=temp2.join("{}");
+	console.log('lance_mission - temp_liste_code final:', temp_liste_code);
 	
 	//this.out(); //modif v1.2
 	//this.visible=false; //modif v1.2
 	$('#bouton_fermer_page_historique').click();
 	page_historique_type_encours="";
 	
+	console.log('Appel de start_mission avec:', data_pass.c6, data_pass.mission, temp_liste_code);
 	start_mission(data_pass.c6,data_pass.mission,temp_liste_code);
 }    
 function start_activite(Id_activite,nom_de_activite,code_a_traiter,liens_kml,marqueurs_fixes){
@@ -2297,6 +2312,9 @@ function start_mission2(nom_de_mission,code_a_traiter){
 		memo_statut=new Array();
         polyline_user_array=new Array();
     
+		console.log('start_mission2 - Appel de recherche_membre_activite avec code_a_traiter:', code_a_traiter);
+		console.log('start_mission2 - Type de code_a_traiter:', typeof code_a_traiter);
+		console.log('start_mission2 - Longueur de code_a_traiter:', code_a_traiter ? code_a_traiter.length : 'null/undefined');
 		recherche_membre_activite(code_a_traiter);
 }
 function stop_mission(){
@@ -2483,6 +2501,9 @@ function Newusergroup(Title_pass , subtitle_pass , badgebitmap_pass){
     this.badgeBitmap=badgebitmap_pass;
 }
 function recherche_membre_activite(liste_des_codes){
+    console.log('recherche_membre_activite appelée avec liste_des_codes:', liste_des_codes);
+    console.log('Global.code_administrateur:', Global.code_administrateur);
+    console.log('Global.indicatif_administrateur:', Global.indicatif_administrateur);
 
     var $data={
         liste_des_codes:liste_des_codes,
@@ -2490,24 +2511,37 @@ function recherche_membre_activite(liste_des_codes){
 	    plateforme:"REZO PC Inline"
         }
     
-    var jqxhr = $.post(Global.APP_SERVER_URL+Global.INFO_ACTIVITE_URI,$data)
+    // Le fichier info_activite.php local fait automatiquement un proxy vers la production
+    // donc on utilise toujours l'URL locale
+    console.log('Données envoyées à info_activite.php:', $data);
+    console.log('URL complète:', Global.APP_SERVER_URL+Global.INFO_ACTIVITE_URI);
+    var jqxhr = $.post(Global.APP_SERVER_URL+Global.INFO_ACTIVITE_URI, $data)
 
     .done(function(data, textStatus, jqXHR ) {
+            console.log('Réponse de info_activite.php:', data);
+            console.log('Status:', textStatus);
+            console.log('HTTP Status:', jqXHR.status);
 
             var buf=data.replace('return_txt=','');
+            console.log('buf après nettoyage:', buf);
+            console.log('Longueur de buf:', buf.length);
 
             if (buf==="-1")
 			{
+				console.error('Erreur: Le serveur a retourné -1 (aucun membre trouvé)');
 				ouvre_alerte("Erreur réseau !<br />Actualisation impossible...");
 				
 			} else if (buf==="")
 			{
+				console.error('Erreur: Réponse vide');
 				ouvre_alerte("Erreur réseau !<br />Actualisation impossible...");
 			}
 			else
 			{
 					
 				var trame2=buf.split("\n");
+				console.log('Nombre de lignes reçues:', trame2.length);
+				console.log('Première ligne:', trame2[0]);
 				var code2= new Array(trame2.length);
 				var statut2 = new Array(trame2.length);
 				var nom2= new Array(trame2.length);
@@ -2525,7 +2559,20 @@ function recherche_membre_activite(liste_des_codes){
 				
 				for (i=0; i<trame2.length;i++)
 				{
+					if (!trame2[i] || trame2[i].trim() === '') {
+						console.log('Ligne vide ignorée à l\'index', i);
+						continue; // Ignorer les lignes vides
+					}
+					
 					var temp2=trame2[i].split("><");
+					console.log('Ligne', i, 'split en', temp2.length, 'éléments:', temp2);
+					
+					if (temp2.length < 12) {
+						console.error('Erreur: Ligne', i, 'n\'a pas assez d\'éléments (attendu: 12, reçu:', temp2.length, ')');
+						console.error('Contenu de la ligne:', trame2[i]);
+						continue; // Ignorer les lignes invalides
+					}
+					
 					code2[i]=temp2[0];
 					statut2[i]=temp2[1];
 					nom2[i]=temp2[2];
@@ -2558,10 +2605,13 @@ function recherche_membre_activite(liste_des_codes){
 					
 				}
 				
+				console.log('Nombre de membres trouvés:', usergroupList.length);
 				if (usergroupList.length>0){
+					console.log('Appel de refresh_position_user avec', code2.length, 'membres');
 					refresh_position_user(code2,statut2,indicatif2,latitude,longitude,etat,iconId,tel,nom2,prenom2,precision,rapport);
 					zoomtofit(false);
     			}else{
+					console.warn('Aucun membre trouvé dans usergroupList');
                     
 					markerArray=new Array();
 				}
@@ -2584,6 +2634,9 @@ function recherche_membre_activite(liste_des_codes){
 			}
       })
   .fail(function(jqXHR, textStatus, errorThrown) {
+      console.error('Erreur AJAX dans recherche_membre_activite:', textStatus, errorThrown);
+      console.error('Response:', jqXHR.responseText);
+      console.error('Status:', jqXHR.status);
       ouvre_alerte('Erreur réseau !<br />Problème technique...'); 
       
   })
