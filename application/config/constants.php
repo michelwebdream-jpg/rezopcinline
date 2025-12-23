@@ -85,7 +85,7 @@ defined('EXIT__AUTO_MIN')      OR define('EXIT__AUTO_MIN', 9); // lowest automat
 defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest automatically-assigned error code
 
 /* custom */
-define('version_du_soft','Version 4.5');
+define('version_du_soft','Version 5.0');
 define('APP_SERVER_URL','https://www.web-dream.fr'); 
 define('REGISTER_URI','/dev/rezo_flash_code/creat_customer.php'); 
 define('UPDATEUSER_URI','/dev/rezo_flash_code/updateuser_customer.php');

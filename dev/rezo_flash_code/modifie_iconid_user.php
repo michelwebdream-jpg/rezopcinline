@@ -36,8 +36,8 @@ if(!function_exists("autoload_dbconnect")){
 	spl_autoload_register('autoload_dbconnect');
 }
 
-// Définir le fichier de log
-$log_file = '/Applications/MAMP/htdocs/rezopcinline/application/logs/db_debug.log';
+// Définir le fichier de log (chemin relatif depuis ce fichier)
+$log_file = dirname(dirname(dirname(__FILE__))) . '/application/logs/db_debug.log';
 
 // Détecter si on est en local
 $is_local = false;
